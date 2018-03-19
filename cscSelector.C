@@ -89,9 +89,11 @@ Bool_t cscSelector::Process(Long64_t entry)
 
    fReader.SetEntry(entry);
   
-//   if (entry > 20000) return kTRUE; 
+//   if (entry > 2000) return kTRUE; 
+
+   if (entry%100 == 0) cout << entry << "/" << nEntry << endl;
    //cout << "Event: " << *Event << endl;
-   //if (*Event == 59284848/*479434223*/) cout << *cscSegments_nSegments << endl;
+//   if (*Event != 698451405/*479434223*/) return kTRUE; //cout << *cscSegments_nSegments << endl;
 
    SaveCSCWithMuon();
 
@@ -104,11 +106,13 @@ Bool_t cscSelector::Process(Long64_t entry)
 
    for (int i = 0; i < int(endcapL.size()); i++) {
 
+
        int endcap_s = endcapL[i];
        int station_s = stationL[i];
        int ring_s = ringL[i];
        int chamber_s = chamberL[i];
-//if (!(endcap_s ==2 && station_s ==4 && ring_s==1 && chamber_s==15)) continue;
+//cout << endcap_s << ", " << station_s << ", " << ring_s << ", " << chamber_s << endl;
+//if (!(endcap_s ==1 && station_s ==4 && ring_s==1 && chamber_s==2)) continue;
        // use chamber Only with n seg
 //       if (nSegmentL[i].size() != 1) continue;
        if (nSegmentL[i].size() != 4) continue;
@@ -124,7 +128,7 @@ Bool_t cscSelector::Process(Long64_t entry)
 */
 
 // fill matrix
-
+//cout << nWire[i].size() << ", " << nComparator[i].size() << endl;
        if (nWire[i].size() <= 0 || nComparator[i].size() <=0) continue;    
 
        int nWireGroups = -1;
@@ -152,11 +156,70 @@ Bool_t cscSelector::Process(Long64_t entry)
        if (station_s == 3 || station_s == 4) reverseRowIndex = true;
 
        vector<CSC1DSeg> allWireSegs = MakeScans(wireMatrix, reverseRowIndex, w_rows, w_cols, nWGsInPatterns, patternRanks_w, 4);
-       vector<CSC1DSeg> allComparatorSegs = MakeScans(comparatorMatrix, reverseRowIndex, s_rows, s_cols, nHalfStrips, patternRanks_s, 9);
+       vector<CSC1DSeg> allComparatorSegs; allComparatorSegs.clear();
+       allComparatorSegs = MakeScans(comparatorMatrix, reverseRowIndex, s_rows, s_cols, nHalfStrips, patternRanks_s, 9);
 
-       vector<CSC1DSeg> allWireSegs_old = MakeScans(wireMatrix, reverseRowIndex, w_rows_old, w_cols_old, nWGsInPatterns_old, patternRanks_w_old, 1);
-       vector<CSC1DSeg> allComparatorSegs_old = MakeScans(comparatorMatrix, reverseRowIndex, s_rows_old, s_cols_old, nHalfStrips_old, patternRanks_s_old, 9);
+//       vector<CSC1DSeg> allWireSegs_old = MakeScans(wireMatrix, reverseRowIndex, w_rows_old, w_cols_old, nWGsInPatterns_old, patternRanks_w_old, 1);
+       vector<CSC1DSeg> allComparatorSegs_old; allComparatorSegs_old.clear();
+       allComparatorSegs_old = MakeScans(comparatorMatrix, reverseRowIndex, s_rows_old, s_cols_old, nHalfStrips_old, patternRanks_s_old, 9);
 
+//cout << allComparatorSegs.size() << ", " << allComparatorSegs_old.size() << endl;
+
+/* 1 wide com seg 
+ 
+       if (allComparatorSegs.size() == 1 && allComparatorSegs[0].patternRank == 1) {
+          if (int(allComparatorSegs_old.size()) == 0) {
+             OneSeg_1WideCLCT->Fill(0);
+             cout << "Event: " << *Event << endl;
+             cout << endcap_s << ", " << station_s << ", " << ring_s << ", " << chamber_s << endl;
+             PrintSparseMatrix(comparatorMatrix);
+             cout << endl;
+             }
+          if (int(allComparatorSegs_old.size()) == 1) OneSeg_1WideCLCT->Fill(allComparatorSegs_old[0].patternRank);
+          if (int(allComparatorSegs_old.size()) > 1) {
+             int nRank1 = 0;
+             for (int r = 0; r < int(allComparatorSegs_old.size()); r++) {if (allComparatorSegs_old[r].patternRank==1) nRank1++;}
+             if (nRank1 == 0) OneSeg_1WideCLCT->Fill(6);
+             else {OneSeg_1WideCLCT->Fill(7); PrintSparseMatrix(comparatorMatrix);}
+             }
+           }
+*/
+
+       if (allWireSegs.size() == 2 && allComparatorSegs.size() == 2 && allComparatorSegs_old.size() == 1) {
+
+          int pRank_1 = allComparatorSegs_old[0].patternRank;
+          int keyPos_1 = allComparatorSegs_old[0].keyPos;
+        
+          if (pRank_1 > 1) continue;        
+ 
+          int pRank_wide_1 = allComparatorSegs[0].patternRank; 
+          int keyPos_wide_1 = allComparatorSegs[0].keyPos;
+          int pRank_wide_2 = allComparatorSegs[1].patternRank;
+          int keyPos_wide_2 = allComparatorSegs[1].keyPos;
+/*
+cout << "wide: " << pRank_wide_1 << ", " << pRank_wide_2 << endl;
+cout << "widePos: " << keyPos_wide_1 << ", " << keyPos_wide_2 << endl;
+cout << "old: " << pRank_1 << endl;
+cout << "oldPos: " << keyPos_1 << endl;
+*/
+          if (pRank_wide_1 > 1 && pRank_wide_2 > 1) continue;
+
+//PrintSparseMatrix(comparatorMatrix);
+
+          if (abs(keyPos_1-keyPos_wide_1) <= 1 && pRank_wide_1 == 1) {
+             FourSeg_2WideCLCT->Fill(pRank_wide_2);
+             if (abs(keyPos_1-keyPos_wide_2) <= 1) PrintSparseMatrix(comparatorMatrix);
+             }
+
+          if (abs(keyPos_1-keyPos_wide_2) <= 1 && pRank_wide_2 == 1) {
+             FourSeg_2WideCLCT->Fill(pRank_wide_1);
+             if (abs(keyPos_1-keyPos_wide_1) <= 1) PrintSparseMatrix(comparatorMatrix);
+             }
+
+          }
+
+
+/* print out and check
 if (allComparatorSegs.size()==2 && allComparatorSegs_old.size()==1) 
    {
 // cout << "nWireSeg: " << allWireSegs.size() << ", nStripSeg: " << allComparatorSegs.size() << ", nWireSeg_old: " << allWireSegs_old.size() << ", nStripSeg_old: " << allComparatorSegs_old.size() << endl;
@@ -168,7 +231,7 @@ if (allComparatorSegs.size()==2 && allComparatorSegs_old.size()==1)
 
    }
 
-       // one wire and com seg per chamber
+*/
 
 /*
        if (int(allWireSegs.size()) != 1 || int(allComparatorSegs.size()) != 1) continue;
@@ -259,6 +322,9 @@ void cscSelector::Terminate()
    TCanvas *c1 = new TCanvas("c1", "", 800,800);//200,10,400,400);
    outputRootFile = new TFile("tmpRootPlots/CSCresults_" + tag + ".root","RECREATE");
    outputRootFile->cd();
+
+   OneSeg_1WideCLCT->Write();
+   FourSeg_2WideCLCT->Write();
 //c1->SetLogy();
 //chi2PerDOF->SetMinimum(0.1);
 //nSegPerChamber->SetMaximum(9000);
@@ -359,13 +425,17 @@ void cscSelector::Terminate()
 
 // user defined function
 
-void cscSelector::SetInputs(TString tag_, TString savedir_, bool doME11_)
+void cscSelector::SetInputs(int nEntry_, TString tag_/* TString savedir_, bool doME11_*/)
 {
 
+   nEntry = nEntry_;
+
+
      tag = tag_;
+/*
      savedir = savedir_;
      doME11 = doME11_;
-
+*/
 }
 
 
@@ -604,7 +674,7 @@ void cscSelector::PrintSparseMatrix(TMatrixDSparse inputMatrix)
          }
 //cout << h_matrix->Integral() << endl;
      WriteTH2F(h_matrix);
-     delete h_matrix;      
+//     delete h_matrix;      
 }
 
 void cscSelector::WriteTH2F(TH2F* hist) {

@@ -399,7 +399,7 @@ public :
    virtual void    Terminate();
 
    virtual void    FillSegs(int segIndex, int chamberIndex, vector<SegsInChamber>& segs);
-   virtual void    SetInputs(TString tag_, TString savedir_, bool doME11_);
+   virtual void    SetInputs(int nEntry_ ,TString tag_/*, TString savedir_, bool doME11_*/);
 //   virtual void    Initialize();
    virtual void    CountObjectsInCSCs(bool doRH, bool doSeg,
                                       bool doWire, bool doStrip, bool doComparator,
@@ -408,8 +408,12 @@ public :
    virtual void    FillWireMatrix(vector<int> wireDigiIndexs, TMatrixDSparse& wireMatrix);
    virtual void    FillComparatorMatrix(vector<int> comparatorDigiIndexs, TMatrixDSparse& comparatorMatrix, bool doStagger);
 
+//   virtual         vector<CSC1DSeg> MakeScans(TMatrixDSparse inputMatrix, bool reverseRowIndex, int** rows, int** cols, int* nHits, int* ranks, int nPatterns);
+//   virtual         vector<CSC1DSeg> ScanPattern(TMatrixDSparse& inputMatrix, int nHitsPerSeg, bool reverseRowIndex, 
+//                                                       int* r_index, int* c_index, int nHitsInPattern, int rank);
+
    virtual         vector<CSC1DSeg> MakeScans(TMatrixDSparse inputMatrix, bool reverseRowIndex, int** rows, int** cols, int* nHits, int* ranks, int nPatterns);
-   virtual         vector<CSC1DSeg> ScanPattern(TMatrixDSparse& inputMatrix, int nHitsPerSeg, bool reverseRowIndex, 
+   virtual         /*TMatrixDSparse*/void ScanPattern(TMatrixDSparse& inputMatrix, vector<CSC1DSeg> & csc1DSegs, int nHitsPerSeg, bool reverseRowIndex,
                                                        int* r_index, int* c_index, int nHitsInPattern, int rank);
 
    virtual int     CountNonZero(int * array, int size);
@@ -509,8 +513,15 @@ public :
    TH2F* nLCT_lumi_MEx2 = new TH2F("nLCT_lumi_MEx2","",20,0,20,20,0,20);
    TH2F* nLCT_lumi_ME13 = new TH2F("nLCT_lumi_ME13","",20,0,20,20,0,20);
 
+   TH1F* OneSeg_1WideCLCT = new TH1F("OneSeg_1WideCLCT","",8,0,8);
+   TH1F* OneSeg_1WideALCT = new TH1F("OneSeg_1WideALCT","",7,0,7);
+
+   TH1F* FourSeg_2WideCLCT = new TH1F("FourSeg_2WideCLCT","",8,0,8);
+
+   int nEntry;
+
    TString tag;
-   TString savedir;
+//   TString savedir;
 
 /*
    struct CSC1DSeg{
@@ -522,7 +533,7 @@ public :
 
    };
 */
-   bool doME11;
+//   bool doME11;
 
    TFile      *outputRootFile;
 
