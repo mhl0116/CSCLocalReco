@@ -427,6 +427,7 @@ public :
    vector<int> stationL;
    vector<int> ringL;
    vector<int> chamberL;
+   vector<int> muIndex;
 
    vector<int> nRH[540] = {};
    vector<int> nSegmentL[540] = {};
@@ -517,6 +518,18 @@ public :
    TH1F* OneSeg_1WideALCT = new TH1F("OneSeg_1WideALCT","",7,0,7);
 
    TH1F* FourSeg_2WideCLCT = new TH1F("FourSeg_2WideCLCT","",8,0,8);
+   TH1F* FourSeg_2WideCLCT_l6 = new TH1F("FourSeg_2WideCLCT_l6","",8,0,8);
+   TH1F* FourSeg_2WideCLCT_l5 = new TH1F("FourSeg_2WideCLCT_l5","",8,0,8);
+   TH1F* FourSeg_2WideCLCT_l4 = new TH1F("FourSeg_2WideCLCT_l4","",8,0,8);
+   TH1F* FourSeg_2WideCLCT_l3 = new TH1F("FourSeg_2WideCLCT_l3","",8,0,8);
+   TH1F* FourSeg_2WideCLCT_all = new TH1F("FourSeg_2WideCLCT_all","",8,0,8);
+   TH1F* FourSeg_2WideCLCT_dn = new TH1F("FourSeg_2WideCLCT_dn","",8,0,8);
+   TH1F* FourSeg_2WideCLCT_up = new TH1F("FourSeg_2WideCLCT_up","",8,0,8);
+
+   TH2F* nHitsPerSeg_muonPt = new TH2F("nHitsPerSeg_muonPt","", 20, 0, 100, 3, 4, 7);
+   TH2F* SegRanking_muonPt = new TH2F("SegRanking_muonPt","", 20, 0, 100, 5, 1, 6);
+   TH2F* nHitsPerSeg_muonPt_old = new TH2F("nHitsPerSeg_muonPt_old","", 20, 0, 100, 3, 4, 7);
+   TH2F* SegRanking_muonPt_old = new TH2F("SegRanking_muonPt_old","", 20, 0, 100, 5, 1, 6);
 
    int nEntry;
 

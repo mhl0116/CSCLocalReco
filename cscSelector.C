@@ -89,9 +89,10 @@ Bool_t cscSelector::Process(Long64_t entry)
 
    fReader.SetEntry(entry);
   
-//   if (entry > 2000) return kTRUE; 
+//   if (entry > 5000) return kTRUE; 
+//   if (entry > 50000) return kTRUE;
 
-   if (entry%100 == 0) cout << entry << "/" << nEntry << endl;
+   if (entry%100 == 0) cout << tag << " th task: " << entry << "/" << nEntry << endl;
    //cout << "Event: " << *Event << endl;
 //   if (*Event != 698451405/*479434223*/) return kTRUE; //cout << *cscSegments_nSegments << endl;
 
@@ -111,6 +112,7 @@ Bool_t cscSelector::Process(Long64_t entry)
        int station_s = stationL[i];
        int ring_s = ringL[i];
        int chamber_s = chamberL[i];
+       int muonIndex = muIndex[i];
 //cout << endcap_s << ", " << station_s << ", " << ring_s << ", " << chamber_s << endl;
 //if (!(endcap_s ==1 && station_s ==4 && ring_s==1 && chamber_s==2)) continue;
        // use chamber Only with n seg
@@ -153,7 +155,7 @@ Bool_t cscSelector::Process(Long64_t entry)
 
 
        bool reverseRowIndex = false;
-       if (station_s == 3 || station_s == 4) reverseRowIndex = true;
+//       if (station_s == 3 || station_s == 4) reverseRowIndex = true;
 
        vector<CSC1DSeg> allWireSegs = MakeScans(wireMatrix, reverseRowIndex, w_rows, w_cols, nWGsInPatterns, patternRanks_w, 4);
        vector<CSC1DSeg> allComparatorSegs; allComparatorSegs.clear();
@@ -166,7 +168,7 @@ Bool_t cscSelector::Process(Long64_t entry)
 //cout << allComparatorSegs.size() << ", " << allComparatorSegs_old.size() << endl;
 
 /* 1 wide com seg 
- 
+
        if (allComparatorSegs.size() == 1 && allComparatorSegs[0].patternRank == 1) {
           if (int(allComparatorSegs_old.size()) == 0) {
              OneSeg_1WideCLCT->Fill(0);
@@ -183,40 +185,109 @@ Bool_t cscSelector::Process(Long64_t entry)
              else {OneSeg_1WideCLCT->Fill(7); PrintSparseMatrix(comparatorMatrix);}
              }
            }
+
+       double muonPt = muons_pt[muonIndex];
+
+       if (allComparatorSegs.size() == 1) {
+          nHitsPerSeg_muonPt->Fill(muonPt, allComparatorSegs[0].nHits);
+          SegRanking_muonPt->Fill(muonPt, allComparatorSegs[0].patternRank);
+          }
+
+       if (allComparatorSegs_old.size() == 1) {
+          nHitsPerSeg_muonPt_old->Fill(muonPt, allComparatorSegs_old[0].nHits);
+          SegRanking_muonPt_old->Fill(muonPt, allComparatorSegs_old[0].patternRank);
+          }
 */
+
+/* 2 wide com seg
+*/
+       if (allWireSegs.size() == 2 && allComparatorSegs.size() == 2) {
+
+          int pRank_wide_1 = allComparatorSegs[0].patternRank;
+          int pRank_wide_2 = allComparatorSegs[1].patternRank;
+
+          if (pRank_wide_1 == 1 && pRank_wide_2 == 1) FourSeg_2WideCLCT_all->Fill(1);
+          if (pRank_wide_1 == 1 && pRank_wide_2 > 1) FourSeg_2WideCLCT_all->Fill(pRank_wide_2);
+          if (pRank_wide_1 > 1 && pRank_wide_2 == 1) FourSeg_2WideCLCT_all->Fill(pRank_wide_1);
+
+          }
 
        if (allWireSegs.size() == 2 && allComparatorSegs.size() == 2 && allComparatorSegs_old.size() == 1) {
 
           int pRank_1 = allComparatorSegs_old[0].patternRank;
           int keyPos_1 = allComparatorSegs_old[0].keyPos;
         
-          if (pRank_1 > 1) continue;        
+//          if (pRank_1 > 1) continue;        
  
           int pRank_wide_1 = allComparatorSegs[0].patternRank; 
           int keyPos_wide_1 = allComparatorSegs[0].keyPos;
+          int nHits_wide_1 = allComparatorSegs[0].nHits;
+
           int pRank_wide_2 = allComparatorSegs[1].patternRank;
           int keyPos_wide_2 = allComparatorSegs[1].keyPos;
-/*
-cout << "wide: " << pRank_wide_1 << ", " << pRank_wide_2 << endl;
-cout << "widePos: " << keyPos_wide_1 << ", " << keyPos_wide_2 << endl;
-cout << "old: " << pRank_1 << endl;
-cout << "oldPos: " << keyPos_1 << endl;
-*/
+          int nHits_wide_2 = allComparatorSegs[1].nHits;
+
+
+//cout << "wide: " << pRank_wide_1 << ", " << pRank_wide_2 << endl;
+//cout << "widePos: " << keyPos_wide_1 << ", " << keyPos_wide_2 << endl;
+//cout << "old: " << pRank_1 << endl;
+//cout << "oldPos: " << keyPos_1 << endl;
+//
           if (pRank_wide_1 > 1 && pRank_wide_2 > 1) continue;
 
 //PrintSparseMatrix(comparatorMatrix);
 
           if (abs(keyPos_1-keyPos_wide_1) <= 1 && pRank_wide_1 == 1) {
              FourSeg_2WideCLCT->Fill(pRank_wide_2);
-             if (abs(keyPos_1-keyPos_wide_2) <= 1) PrintSparseMatrix(comparatorMatrix);
+             if (nHits_wide_2 == 6) FourSeg_2WideCLCT_l6->Fill(pRank_wide_2);
+             if (nHits_wide_2 == 5) FourSeg_2WideCLCT_l5->Fill(pRank_wide_2);
+             if (nHits_wide_2 == 4) FourSeg_2WideCLCT_l4->Fill(pRank_wide_2);
+//             if (nHits_wide_2 == 3) FourSeg_2WideCLCT_l3->Fill(pRank_wide_2);
+
+//             if (pRank_wide_2 == 1) PrintSparseMatrix(comparatorMatrix);
+//             if (abs(keyPos_1-keyPos_wide_2) <= 1) PrintSparseMatrix(comparatorMatrix);
              }
 
           if (abs(keyPos_1-keyPos_wide_2) <= 1 && pRank_wide_2 == 1) {
              FourSeg_2WideCLCT->Fill(pRank_wide_1);
-             if (abs(keyPos_1-keyPos_wide_1) <= 1) PrintSparseMatrix(comparatorMatrix);
+             if (nHits_wide_1 == 6) FourSeg_2WideCLCT_l6->Fill(pRank_wide_1);
+             if (nHits_wide_1 == 5) FourSeg_2WideCLCT_l5->Fill(pRank_wide_1);
+             if (nHits_wide_1 == 4) FourSeg_2WideCLCT_l4->Fill(pRank_wide_1);
+//             if (pRank_wide_1 == 1) PrintSparseMatrix(comparatorMatrix);
+
+//             if (abs(keyPos_1-keyPos_wide_1) <= 1) PrintSparseMatrix(comparatorMatrix);
              }
 
           }
+
+
+
+       if (allWireSegs.size() == 2 && allComparatorSegs.size() == 2 && allComparatorSegs_old.size() == 2) {
+
+          int pRank_1 = allComparatorSegs_old[0].patternRank;
+          int keyPos_1 = allComparatorSegs_old[0].keyPos;
+          int pRank_2 = allComparatorSegs_old[1].patternRank;
+          int keyPos_2 = allComparatorSegs_old[1].keyPos;
+
+          int pRank_wide_1 = allComparatorSegs[0].patternRank;
+          int keyPos_wide_1 = allComparatorSegs[0].keyPos;
+          int pRank_wide_2 = allComparatorSegs[1].patternRank;
+          int keyPos_wide_2 = allComparatorSegs[1].keyPos;
+
+          if (pRank_wide_1 == 1 && abs(keyPos_wide_1-keyPos_1) <= 1 && pRank_2 > pRank_wide_2 && abs(keyPos_wide_2-keyPos_2) <= 1) FourSeg_2WideCLCT_dn->Fill(pRank_wide_2);
+          if (pRank_wide_2 == 1 && abs(keyPos_wide_2-keyPos_2) <= 1 && pRank_1 > pRank_wide_1 && abs(keyPos_wide_1-keyPos_1) <= 1) FourSeg_2WideCLCT_dn->Fill(pRank_wide_1);
+
+          if (pRank_wide_1 == 1 && abs(keyPos_wide_1-keyPos_1) <= 1 && pRank_2 < pRank_wide_2 && abs(keyPos_wide_2-keyPos_2) <= 1) {
+              FourSeg_2WideCLCT_up->Fill(pRank_wide_2); //PrintSparseMatrix(comparatorMatrix);
+             }
+
+          if (pRank_wide_2 == 1 && abs(keyPos_wide_2-keyPos_2) <= 1 && pRank_1 < pRank_wide_1 && abs(keyPos_wide_1-keyPos_1) <= 1) {
+              FourSeg_2WideCLCT_up->Fill(pRank_wide_1); //PrintSparseMatrix(comparatorMatrix);
+             }
+
+          }
+
+//*/
 
 
 /* print out and check
@@ -323,8 +394,21 @@ void cscSelector::Terminate()
    outputRootFile = new TFile("tmpRootPlots/CSCresults_" + tag + ".root","RECREATE");
    outputRootFile->cd();
 
+   nHitsPerSeg_muonPt->Write();
+   SegRanking_muonPt->Write();
+   nHitsPerSeg_muonPt_old->Write();
+   SegRanking_muonPt_old->Write();
+
    OneSeg_1WideCLCT->Write();
    FourSeg_2WideCLCT->Write();
+   FourSeg_2WideCLCT_all->Write();
+   FourSeg_2WideCLCT_up->Write();
+   FourSeg_2WideCLCT_dn->Write();
+   FourSeg_2WideCLCT_l6->Write();
+   FourSeg_2WideCLCT_l5->Write();
+   FourSeg_2WideCLCT_l4->Write();
+   FourSeg_2WideCLCT_l3->Write();
+
 //c1->SetLogy();
 //chi2PerDOF->SetMinimum(0.1);
 //nSegPerChamber->SetMaximum(9000);

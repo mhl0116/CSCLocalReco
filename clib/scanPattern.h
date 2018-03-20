@@ -13,7 +13,8 @@ vector<CSC1DSeg> cscSelector::MakeScans(TMatrixDSparse inputMatrix, bool reverse
     vector<TMatrixDSparse> inputMatrixs;
     inputMatrixs.push_back(inputMatrix);
 
-    for (int i = 6; i >= 3; i--) { // nHits/Seg loop
+    for (int i = 6; i >= 4; i--) { // nHits/Seg loop
+//    for (int i = 6; i >= 3; i--) { // nHits/Seg loop
      for (int j = 0; j < nPatterns; j++) { // patterns loop
 
          int* rowIndex = rows[j];
