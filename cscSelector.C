@@ -89,14 +89,15 @@ Bool_t cscSelector::Process(Long64_t entry)
 
    fReader.SetEntry(entry);
   
-//   if (entry > 5000) return kTRUE; 
-//   if (entry > 50000) return kTRUE;
+//   if (entry > 500000) return kTRUE; 
+//   if (entry > 10000) return kTRUE;
 
-   if (entry%100 == 0) cout << tag << " th task: " << entry << "/" << nEntry << endl;
+   if (entry%1000 == 0) cout << tag << " th task: " << entry << "/" << nEntry << endl;
    //cout << "Event: " << *Event << endl;
 //   if (*Event != 698451405/*479434223*/) return kTRUE; //cout << *cscSegments_nSegments << endl;
 
    SaveCSCWithMuon();
+
 
    // if no CSC contains a muon segment, skip this event
    if (int(endcapL.size()) == 0) return kTRUE;
@@ -113,24 +114,27 @@ Bool_t cscSelector::Process(Long64_t entry)
        int ring_s = ringL[i];
        int chamber_s = chamberL[i];
        int muonIndex = muIndex[i];
-//cout << endcap_s << ", " << station_s << ", " << ring_s << ", " << chamber_s << endl;
-//if (!(endcap_s ==1 && station_s ==4 && ring_s==1 && chamber_s==2)) continue;
-       // use chamber Only with n seg
-//       if (nSegmentL[i].size() != 1) continue;
-       if (nSegmentL[i].size() != 4) continue;
-       int segIndex = nSegmentL[i][0];
-//       if (cscSegments_nRecHits[segIndex] != nRH[i].size()) continue;
-//       if (!(cscSegments_nRecHits[segIndex] == 6 && nRH[i].size() == 6 ) ) continue;
 
-/*
-       if (!(cscSegments_nRecHits[nSegmentL[i][0]] == 6 && 
-             cscSegments_nRecHits[nSegmentL[i][1]] == 6 && 
-             cscSegments_nRecHits[nSegmentL[i][2]] == 6 && 
-             cscSegments_nRecHits[nSegmentL[i][3]] == 6 && nRH[i].size() < 30) ) continue;
-*/
+       vector<int> strips_s = stripsFromMu[i];
+       sort(strips_s.begin(), strips_s.end());
+       int strip_min = strips_s[0];
+       int strip_max = strips_s.back();
+
+//cout << strip_min << ", " << strip_max << endl;
+//cout << endcap_s << ", " << station_s << ", " << ring_s << ", " << chamber_s << ", nStrips: " << stripsFromMu[i].size() << endl;
+//if (!(endcap_s ==1 && station_s ==4 && ring_s==1 && chamber_s==2)) continue;
+
+// use chamber Only with n seg
+//       if (nSegmentL[i].size() != 1) continue;
+//       if (nSegmentL[i].size() != 4) continue; 
+
+       if (nSegmentL[i].size() < 4) continue;
+       if (int(strips_s.size()) > 6) continue; // more than one muon in one CSC
+       int segIndex = nSegmentL[i][0];
 
 // fill matrix
 //cout << nWire[i].size() << ", " << nComparator[i].size() << endl;
+
        if (nWire[i].size() <= 0 || nComparator[i].size() <=0) continue;    
 
        int nWireGroups = -1;
@@ -151,13 +155,15 @@ Bool_t cscSelector::Process(Long64_t entry)
        if (station_s == 1 && (ring_s == 1 || ring_s == 4) ) doStagger = false;
 
        TMatrixDSparse comparatorMatrix(6,2*nStrips+2);
-       FillComparatorMatrix(nComparator[i], comparatorMatrix, doStagger);
+       FillComparatorMatrix(nComparator[i], comparatorMatrix, doStagger, strip_min, strip_max);
+//       TMatrixDSparse comparatorMatrix_full(6,2*nStrips+2);
+//       FillComparatorMatrix(nComparator[i], comparatorMatrix_full, doStagger);
 
 
        bool reverseRowIndex = false;
 //       if (station_s == 3 || station_s == 4) reverseRowIndex = true;
 
-       vector<CSC1DSeg> allWireSegs = MakeScans(wireMatrix, reverseRowIndex, w_rows, w_cols, nWGsInPatterns, patternRanks_w, 4);
+//       vector<CSC1DSeg> allWireSegs = MakeScans(wireMatrix, reverseRowIndex, w_rows, w_cols, nWGsInPatterns, patternRanks_w, 4);
        vector<CSC1DSeg> allComparatorSegs; allComparatorSegs.clear();
        allComparatorSegs = MakeScans(comparatorMatrix, reverseRowIndex, s_rows, s_cols, nHalfStrips, patternRanks_s, 9);
 
@@ -165,7 +171,75 @@ Bool_t cscSelector::Process(Long64_t entry)
        vector<CSC1DSeg> allComparatorSegs_old; allComparatorSegs_old.clear();
        allComparatorSegs_old = MakeScans(comparatorMatrix, reverseRowIndex, s_rows_old, s_cols_old, nHalfStrips_old, patternRanks_s_old, 9);
 
-//cout << allComparatorSegs.size() << ", " << allComparatorSegs_old.size() << endl;
+       int nclct_wide = allComparatorSegs.size();
+       int nclct_narrow = allComparatorSegs_old.size();
+
+       bool allBelongsToRank_1_2 = true;
+       bool allBelongsToRank_1_2_3 = true;
+       bool allBelongsToLayer_6 = true;
+       bool allBelongsToLayer_5 = true;
+
+
+       int CSCid = ChamberID_converter(station_s, ring_s);
+
+       nTotal->Fill(CSCid);
+       if (nclct_wide < nclct_narrow) {
+          nTotal_wideHasLess->Fill(CSCid);
+
+   cout << "wide: ";
+   for (int a = 0; a < nclct_wide; a++) cout << allComparatorSegs[a].nHits << " ";
+   cout << endl;
+   cout << "narrow: ";
+   for (int a = 0; a < nclct_narrow; a++) cout << allComparatorSegs_old[a].nHits << " ";
+   cout << endl;
+   PrintSparseMatrix(comparatorMatrix);
+
+          }
+
+       for (int irank=0; irank < nclct_wide; irank++) {
+           if (allComparatorSegs[irank].patternRank > 2) allBelongsToRank_1_2 = false;
+           if (allComparatorSegs[irank].patternRank > 3) allBelongsToRank_1_2_3 = false;
+           if (allComparatorSegs[irank].nHits != 6) allBelongsToLayer_6 = false;
+           if (allComparatorSegs[irank].nHits != 5) allBelongsToLayer_5 = false;
+           }
+   
+       nCLCT_wide->Fill(CSCid,nclct_wide);
+       nCLCT_narrow->Fill(CSCid,nclct_narrow);
+
+       if (allBelongsToRank_1_2) {
+          nCLCT_wide_rank_1_2->Fill(CSCid,nclct_wide);
+          nCLCT_narrow_rank_1_2->Fill(CSCid,nclct_narrow);
+          }
+
+      if (allBelongsToRank_1_2_3 && (allBelongsToLayer_6 || allBelongsToLayer_5) ) {
+
+         nCLCT_wide_rank_123_layer_56->Fill(CSCid,nclct_wide);
+         nCLCT_narrow_rank_123_layer_56->Fill(CSCid,nclct_narrow);
+
+         }
+
+      if (allBelongsToLayer_6) {
+          nCLCT_wide_layer_6->Fill(CSCid,nclct_wide);
+          nCLCT_narrow_layer_6->Fill(CSCid,nclct_narrow);
+          }
+
+      if (allBelongsToLayer_5) {
+          nCLCT_wide_layer_5->Fill(CSCid,nclct_wide);
+          nCLCT_narrow_layer_5->Fill(CSCid,nclct_narrow);
+          }
+
+/*
+cout << allComparatorSegs.size() << ", " << allComparatorSegs_old.size() << endl;
+cout << strip_min << ", " << strip_max << endl;
+if (allComparatorSegs.size()==2 && allComparatorSegs_old.size()==2) {
+   PrintSparseMatrix(comparatorMatrix_full); cout << endl;
+   PrintSparseMatrix(comparatorMatrix);
+}
+*/
+
+
+
+
 
 /* 1 wide com seg 
 
@@ -200,7 +274,7 @@ Bool_t cscSelector::Process(Long64_t entry)
 */
 
 /* 2 wide com seg
-*/
+
        if (allWireSegs.size() == 2 && allComparatorSegs.size() == 2) {
 
           int pRank_wide_1 = allComparatorSegs[0].patternRank;
@@ -287,7 +361,7 @@ Bool_t cscSelector::Process(Long64_t entry)
 
           }
 
-//*/
+*/
 
 
 /* print out and check
@@ -394,6 +468,23 @@ void cscSelector::Terminate()
    outputRootFile = new TFile("tmpRootPlots/CSCresults_" + tag + ".root","RECREATE");
    outputRootFile->cd();
 
+nTotal->Write();
+nTotal_wideHasLess->Write();
+
+nCLCT_wide_rank_123_layer_56->Write();
+nCLCT_narrow_rank_123_layer_56->Write();
+
+   nCLCT_wide->Write();
+   nCLCT_narrow->Write();
+
+nCLCT_wide_rank_1_2->Write();
+nCLCT_narrow_rank_1_2->Write();
+nCLCT_wide_layer_6->Write();
+nCLCT_narrow_layer_6->Write();
+nCLCT_wide_layer_5->Write();
+nCLCT_narrow_layer_5->Write();
+
+/*
    nHitsPerSeg_muonPt->Write();
    SegRanking_muonPt->Write();
    nHitsPerSeg_muonPt_old->Write();
@@ -486,7 +577,7 @@ void cscSelector::Terminate()
    nLCT_lumi_MEx1->Write();
    nLCT_lumi_MEx2->Write();
    nLCT_lumi_ME13->Write();
-
+*/
    outputRootFile->Close();
 
    cout << "root file " << outputRootFile->GetName() << " made " << endl;
@@ -773,4 +864,23 @@ void cscSelector::WriteTH2F(TH2F* hist) {
          std::cout << std::endl;
          }
 
+}
+
+
+int cscSelector::ChamberID_converter(int station, int ring) {
+
+    int id = -1;
+
+    if (station == 1 && ring == 4) id = 0;   
+    if (station == 1 && ring == 1) id = 1;
+    if (station == 1 && ring == 2) id = 2;
+    if (station == 1 && ring == 3) id = 3;
+    if (station == 2 && ring == 1) id = 4;
+    if (station == 2 && ring == 2) id = 5;
+    if (station == 3 && ring == 1) id = 6;
+    if (station == 3 && ring == 2) id = 7;
+    if (station == 4 && ring == 1) id = 8;
+    if (station == 4 && ring == 2) id = 9;
+
+    return id;
 }

@@ -405,8 +405,9 @@ public :
                                       bool doWire, bool doStrip, bool doComparator,
                                       bool doALCT, bool doCLCT, bool LCT);
    virtual void    SaveCSCWithMuon();
+   vector<int>     RHsMatching(int endcap, int station, int ring, int chamber, double localX, double localY);
    virtual void    FillWireMatrix(vector<int> wireDigiIndexs, TMatrixDSparse& wireMatrix);
-   virtual void    FillComparatorMatrix(vector<int> comparatorDigiIndexs, TMatrixDSparse& comparatorMatrix, bool doStagger);
+   virtual void    FillComparatorMatrix(vector<int> comparatorDigiIndexs, TMatrixDSparse& comparatorMatrix, bool doStagger, int min=0, int max=120);
 
 //   virtual         vector<CSC1DSeg> MakeScans(TMatrixDSparse inputMatrix, bool reverseRowIndex, int** rows, int** cols, int* nHits, int* ranks, int nPatterns);
 //   virtual         vector<CSC1DSeg> ScanPattern(TMatrixDSparse& inputMatrix, int nHitsPerSeg, bool reverseRowIndex, 
@@ -421,6 +422,7 @@ public :
 
    virtual void    PrintSparseMatrix(TMatrixDSparse inputMatrix);
    virtual void    WriteTH2F(TH2F* hist);
+   virtual int    ChamberID_converter(int station, int ring);
 
    // save CSC's ID if there is a muon from Z decay
    vector<int> endcapL; 
@@ -428,6 +430,7 @@ public :
    vector<int> ringL;
    vector<int> chamberL;
    vector<int> muIndex;
+   vector<vector<int> > stripsFromMu;
 
    vector<int> nRH[540] = {};
    vector<int> nSegmentL[540] = {};
@@ -437,7 +440,25 @@ public :
    vector<int> nALCT[540] = {};
    vector<int> nCLCT[540] = {};
    vector<int> nLCT[540] = {};
-   
+
+   TH1F* nTotal = new TH1F("nTotal","",10,0,10); 
+   TH1F* nTotal_wideHasLess = new TH1F("nTotal_wideHasLess","",10,0,10);
+ 
+   TH1F* nCLCT_wide = new TH1F("nCLCT_wide","",10,0,10);
+   TH1F* nCLCT_narrow = new TH1F("nCLCT_narrow","",10,0,10);
+
+   TH1F* nCLCT_wide_rank_1_2 = new TH1F("nCLCT_wide_rank_1_2","",10,0,10);
+   TH1F* nCLCT_narrow_rank_1_2 = new TH1F("nCLCT_narrow_rank_1_2","",10,0,10);
+ 
+   TH1F* nCLCT_wide_layer_6 = new TH1F("nCLCT_wide_layer_6","",10,0,10);
+   TH1F* nCLCT_narrow_layer_6 = new TH1F("nCLCT_narrow_layer_6","",10,0,10);
+
+   TH1F* nCLCT_wide_layer_5= new TH1F("nCLCT_wide_layer_5","",10,0,10);
+   TH1F* nCLCT_narrow_layer_5 = new TH1F("nCLCT_narrow_layer_5","",10,0,10);
+
+   TH1F* nCLCT_wide_rank_123_layer_56 = new TH1F("nCLCT_wide_rank_123_layer_56","",10,0,10);
+   TH1F* nCLCT_narrow_rank_123_layer_56 = new TH1F("nCLCT_narrow_rank_123_layer_56","",10,0,10);
+
    TH1F* nSegPerChamber = new TH1F("nSegPerChamebr","",10,0,10); 
    TH1F* nRHPerSeg = new TH1F("nRHPerSeg","",7,0,7);
    TH1F* chi2PerDOF = new TH1F("chi2PerDOF","",100,0,200);

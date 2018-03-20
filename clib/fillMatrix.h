@@ -28,8 +28,11 @@ void cscSelector::FillWireMatrix(vector<int> wireDigiIndexs, TMatrixDSparse& wir
 }
 
 
-void cscSelector::FillComparatorMatrix(vector<int> comparatorDigiIndexs, TMatrixDSparse& comparatorMatrix, bool doStagger)
+void cscSelector::FillComparatorMatrix(vector<int> comparatorDigiIndexs, TMatrixDSparse& comparatorMatrix, bool doStagger, int min=0, int max=120)
 {
+
+  int comNum_min = min*2-1; comNum_min -= 2;
+  int comNum_max = max*2;   comNum_max += 2;
 
   const int nComparators = int(comparatorDigiIndexs.size());
   TArrayI row(nComparators),col(nComparators);
@@ -40,6 +43,9 @@ void cscSelector::FillComparatorMatrix(vector<int> comparatorDigiIndexs, TMatrix
       int cLayer = comparatorDigis_ID_layer[index];
       int comparatorNumber = comparatorDigis_ID_halfStrip[index];
       int comparatorTime = comparatorDigis_timeBin[index];
+
+      if (min!=0 && max!=120 && comparatorNumber >= comNum_min && comparatorNumber <= comNum_max) continue;
+      // skip an area, do not fill with comparator information for scan
 
       if (doStagger && (cLayer == 1 || cLayer == 3 || cLayer == 5)) comparatorNumber += 1;
 

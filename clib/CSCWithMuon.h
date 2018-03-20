@@ -2,7 +2,7 @@ void cscSelector::SaveCSCWithMuon()
 {
 
 
-   endcapL.clear(); stationL.clear(); ringL.clear(); chamberL.clear(); muIndex.clear();
+   endcapL.clear(); stationL.clear(); ringL.clear(); chamberL.clear(); muIndex.clear(); stripsFromMu.clear();
    vector<int> ZmuIndex; ZmuIndex.clear();
 
    for (int i = 0; i < *muons_nMuons; i++) {
@@ -27,6 +27,7 @@ void cscSelector::SaveCSCWithMuon()
            double localX = muons_cscSegmentRecord_localX[tmpIndex][j];
            double localY = muons_cscSegmentRecord_localY[tmpIndex][j];
 
+           vector<int> tmpStrips = RHsMatching(endcap, station, ring, chamber, localX, localY);          
 // do seg - rh - strip matching here, save all associated strips
 // if is from a new chamber, push back a vector to end
 // if is from a repeated chamber, append to the end before next continue
@@ -34,13 +35,24 @@ void cscSelector::SaveCSCWithMuon()
                 (find(stationL.begin(), stationL.end(), station) != stationL.end() ) &&
                 (find(ringL.begin(), ringL.end(), ring) != ringL.end() ) &&
                 (find(chamberL.begin(), chamberL.end(), chamber) != chamberL.end() )
-              ) continue; 
+              ) {
+                
+                int tmpIndex = find(endcapL.begin(), endcapL.end(), endcap) - endcapL.begin();
+                vector<int> oldStrips = stripsFromMu[tmpIndex];
+//cout << "before: " << stripsFromMu[tmpIndex].size() << endl;
+                oldStrips.insert(oldStrips.end(), tmpStrips.begin(), tmpStrips.end());
+                stripsFromMu[tmpIndex] = oldStrips;
+//cout << "after: " << stripsFromMu[tmpIndex].size() << endl; cout << endl;
+
+                continue;
+                }
 
            endcapL.push_back(endcap);
            stationL.push_back(station);
            ringL.push_back(ring);
            chamberL.push_back(chamber);
            muIndex.push_back(tmpIndex);
+           stripsFromMu.push_back(tmpStrips);
 
            }
        }
@@ -49,9 +61,11 @@ void cscSelector::SaveCSCWithMuon()
 }
 
 
-cscSelector::RHsMatching(int endcap, int station, int ring, int chamber, double localX, double localY) {
+vector<int> cscSelector::RHsMatching(int endcap, int station, int ring, int chamber, double localX, double localY) {
 
-      for (int i = 0; i < int(cscSegments_nSegments); i++) {
+      vector<int> strips; strips.clear();
+
+      for (int i = 0; i < *cscSegments_nSegments; i++) {
 
           int endcap_ = cscSegments_ID_endcap[i];
           int station_ = cscSegments_ID_station[i];
@@ -63,13 +77,13 @@ cscSelector::RHsMatching(int endcap, int station, int ring, int chamber, double 
           if (endcap != endcap_ || station != station_ || ring != ring_ || chamber != chamber_ ||
               localX != localX_ || localY != localY_) continue;
        
-          for (int j = 0; j < int(cscSegments_recHitRecord_endcap.size()); j ++) {
+          for (int j = 0; j < int(cscSegments_recHitRecord_endcap[i].size()); j ++) {
 
               int layer_rh = cscSegments_recHitRecord_layer[i][j];
               double localX_rh = cscSegments_recHitRecord_localX[i][j];
               double localY_rh = cscSegments_recHitRecord_localY[i][j];
 
-              for (int k = 0; k < int(recHits2D_nRecHits2D); k++) {
+              for (int k = 0; k < *recHits2D_nRecHits2D; k++) {
 
                   int endcap_r = recHits2D_ID_endcap[k];
                   int station_r = recHits2D_ID_station[k];
@@ -84,9 +98,11 @@ cscSelector::RHsMatching(int endcap, int station, int ring, int chamber, double 
 
                      int nearestStrip = recHits2D_nearestStrip[k];
                      // save it in a vector, then you are done !
+                     strips.push_back(nearestStrip);
 
                   }
               }
           }
 
+      return strips;
 }
