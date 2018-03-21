@@ -89,8 +89,8 @@ Bool_t cscSelector::Process(Long64_t entry)
 
    fReader.SetEntry(entry);
   
-//   if (entry > 250000) return kTRUE; 
-//   if (entry > 10000) return kTRUE;
+//   if (entry > 200000) return kTRUE; 
+   if (entry > 20000) return kTRUE;
 
    if (entry%1000 == 0) cout << tag << " th task: " << entry << "/" << nEntry << endl;
    //cout << "Event: " << *Event << endl;
@@ -125,10 +125,10 @@ Bool_t cscSelector::Process(Long64_t entry)
 //if (!(endcap_s ==1 && station_s ==4 && ring_s==1 && chamber_s==2)) continue;
 
 // use chamber Only with n seg
-//       if (nSegmentL[i].size() != 1) continue;
+       if (nSegmentL[i].size() != 1) continue;
 //       if (nSegmentL[i].size() != 4) continue; 
 
-       if (nSegmentL[i].size() < 4) continue;
+//       if (nSegmentL[i].size() < 4) continue;
        if (int(strips_s.size()) > 6) continue; // more than one muon in one CSC
        int segIndex = nSegmentL[i][0];
 
@@ -155,7 +155,7 @@ Bool_t cscSelector::Process(Long64_t entry)
        if (station_s == 1 && (ring_s == 1 || ring_s == 4) ) doStagger = false;
 
        TMatrixDSparse comparatorMatrix(6,2*nStrips+2);
-       FillComparatorMatrix(nComparator[i], comparatorMatrix, doStagger, strip_min, strip_max);
+       FillComparatorMatrix(nComparator[i], comparatorMatrix, doStagger);//, strip_min, strip_max);
 //       TMatrixDSparse comparatorMatrix_full(6,2*nStrips+2);
 //       FillComparatorMatrix(nComparator[i], comparatorMatrix_full, doStagger);
 
@@ -174,6 +174,39 @@ Bool_t cscSelector::Process(Long64_t entry)
        int nclct_wide = allComparatorSegs.size();
        int nclct_narrow = allComparatorSegs_old.size();
 
+       if (nclct_wide == 1 && ceil((allComparatorSegs[0].keyPos-0.1)/2) >= strip_min && ceil((allComparatorSegs[0].keyPos-0.1)/2) <= strip_max)
+          nHitsPerCLCT_wide->Fill(allComparatorSegs[0].nHits);
+       if (nclct_narrow == 1 && ceil((allComparatorSegs_old[0].keyPos-0.1)/2) >= strip_min && ceil((allComparatorSegs_old[0].keyPos-0.1)/2) <= strip_max)
+          nHitsPerCLCT_narrow->Fill(allComparatorSegs_old[0].nHits);
+
+
+
+/*
+       if (nclct_wide != 1) continue;
+       int nLayer_wide = allComparatorSegs[0].nHits;
+       int rank_wide = allComparatorSegs[0].patternRank;
+
+       int nclct_narrow_mod = nclct_narrow;
+       if (nclct_narrow > 1) nclct_narrow_mod = 1;
+
+       if (nLayer_wide==6) {
+          eff_layer6->Fill(rank_wide);
+          eff_layer6_narrow->Fill(rank_wide,nclct_narrow_mod);
+          } 
+
+       if (nLayer_wide==5) {
+          eff_layer5->Fill(rank_wide);
+          eff_layer5_narrow->Fill(rank_wide,nclct_narrow_mod);
+          }
+
+       if (nLayer_wide==4) {
+          eff_layer4->Fill(rank_wide);
+          eff_layer4_narrow->Fill(rank_wide,nclct_narrow_mod);
+          }
+*/
+
+/*       
+
        bool allBelongsToRank_1_2 = true;
        bool allBelongsToRank_1_2_3 = true;
        bool allBelongsToRank_4_5 = true;
@@ -186,15 +219,15 @@ Bool_t cscSelector::Process(Long64_t entry)
        nTotal->Fill(CSCid);
        if (nclct_wide < nclct_narrow) {
           nTotal_wideHasLess->Fill(CSCid);
-/*
-   cout << "wide: ";
-   for (int a = 0; a < nclct_wide; a++) cout << allComparatorSegs[a].nHits << " ";
-   cout << endl;
-   cout << "narrow: ";
-   for (int a = 0; a < nclct_narrow; a++) cout << allComparatorSegs_old[a].nHits << " ";
-   cout << endl;
-   PrintSparseMatrix(comparatorMatrix);
-*/
+
+//   cout << "wide: ";
+//   for (int a = 0; a < nclct_wide; a++) cout << allComparatorSegs[a].nHits << " ";
+//   cout << endl;
+//   cout << "narrow: ";
+//   for (int a = 0; a < nclct_narrow; a++) cout << allComparatorSegs_old[a].nHits << " ";
+//   cout << endl;
+//   PrintSparseMatrix(comparatorMatrix);
+
           }
 
        for (int irank=0; irank < nclct_wide; irank++) {
@@ -240,7 +273,7 @@ if (nclct_wide > 0 || nclct_narrow > 0) PrintSparseMatrix(comparatorMatrix);
           nCLCT_wide_layer_5->Fill(CSCid,nclct_wide);
           nCLCT_narrow_layer_5->Fill(CSCid,nclct_narrow);
           }
-
+*/
 /*
 cout << allComparatorSegs.size() << ", " << allComparatorSegs_old.size() << endl;
 cout << strip_min << ", " << strip_max << endl;
@@ -480,6 +513,16 @@ void cscSelector::Terminate()
    TCanvas *c1 = new TCanvas("c1", "", 800,800);//200,10,400,400);
    outputRootFile = new TFile("tmpRootPlots/CSCresults_" + tag + ".root","RECREATE");
    outputRootFile->cd();
+
+nHitsPerCLCT_narrow->Write();
+nHitsPerCLCT_wide->Write();
+eff_layer6->Write();
+eff_layer5->Write();
+eff_layer4->Write();
+eff_layer6_narrow->Write();
+eff_layer5_narrow->Write();
+eff_layer4_narrow->Write();
+
 
 nTotal->Write();
 nTotal_wideHasLess->Write();

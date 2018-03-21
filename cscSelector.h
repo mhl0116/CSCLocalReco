@@ -441,8 +441,18 @@ public :
    vector<int> nCLCT[540] = {};
    vector<int> nLCT[540] = {};
 
+   TH1F* nHitsPerCLCT_wide = new TH1F("nHitsPerCLCT_wide","",7,0,7);
+   TH1F* nHitsPerCLCT_narrow = new TH1F("nHitsPerCLCT_narrow","",7,0,7);
+
    TH1F* nTotal = new TH1F("nTotal","",10,0,10); 
    TH1F* nTotal_wideHasLess = new TH1F("nTotal_wideHasLess","",10,0,10);
+
+   TH1F* eff_layer6 = new TH1F("eff_layer6","",5,1,6);
+   TH1F* eff_layer5 = new TH1F("eff_layer5","",5,1,6);
+   TH1F* eff_layer4 = new TH1F("eff_layer4","",5,1,6);
+   TH1F* eff_layer6_narrow = new TH1F("eff_layer6_narrow","",5,1,6);
+   TH1F* eff_layer5_narrow = new TH1F("eff_layer5_narrow","",5,1,6);
+   TH1F* eff_layer4_narrow = new TH1F("eff_layer4_narrow","",5,1,6);
  
    TH1F* nCLCT_wide = new TH1F("nCLCT_wide","",10,0,10);
    TH1F* nCLCT_narrow = new TH1F("nCLCT_narrow","",10,0,10);
