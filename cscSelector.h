@@ -459,6 +459,12 @@ public :
    TH1F* nCLCT_wide_rank_123_layer_56 = new TH1F("nCLCT_wide_rank_123_layer_56","",10,0,10);
    TH1F* nCLCT_narrow_rank_123_layer_56 = new TH1F("nCLCT_narrow_rank_123_layer_56","",10,0,10);
 
+   TH1F* nCLCT_wide_rank_123_layer_4 = new TH1F("nCLCT_wide_rank_123_layer_4","",10,0,10);
+   TH1F* nCLCT_narrow_rank_123_layer_4 = new TH1F("nCLCT_narrow_rank_123_layer_4","",10,0,10);
+
+   TH1F* nCLCT_wide_rank_45_layer_56 = new TH1F("nCLCT_wide_rank_45_layer_56","",10,0,10);
+   TH1F* nCLCT_narrow_rank_45_layer_56 = new TH1F("nCLCT_narrow_rank_45_layer_56","",10,0,10);
+
    TH1F* nSegPerChamber = new TH1F("nSegPerChamebr","",10,0,10); 
    TH1F* nRHPerSeg = new TH1F("nRHPerSeg","",7,0,7);
    TH1F* chi2PerDOF = new TH1F("chi2PerDOF","",100,0,200);

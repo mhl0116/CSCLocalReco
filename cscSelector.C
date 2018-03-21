@@ -89,7 +89,7 @@ Bool_t cscSelector::Process(Long64_t entry)
 
    fReader.SetEntry(entry);
   
-//   if (entry > 500000) return kTRUE; 
+//   if (entry > 250000) return kTRUE; 
 //   if (entry > 10000) return kTRUE;
 
    if (entry%1000 == 0) cout << tag << " th task: " << entry << "/" << nEntry << endl;
@@ -176,16 +176,17 @@ Bool_t cscSelector::Process(Long64_t entry)
 
        bool allBelongsToRank_1_2 = true;
        bool allBelongsToRank_1_2_3 = true;
+       bool allBelongsToRank_4_5 = true;
        bool allBelongsToLayer_6 = true;
        bool allBelongsToLayer_5 = true;
-
+       bool allBelongsToLayer_4 = true;
 
        int CSCid = ChamberID_converter(station_s, ring_s);
 
        nTotal->Fill(CSCid);
        if (nclct_wide < nclct_narrow) {
           nTotal_wideHasLess->Fill(CSCid);
-
+/*
    cout << "wide: ";
    for (int a = 0; a < nclct_wide; a++) cout << allComparatorSegs[a].nHits << " ";
    cout << endl;
@@ -193,14 +194,16 @@ Bool_t cscSelector::Process(Long64_t entry)
    for (int a = 0; a < nclct_narrow; a++) cout << allComparatorSegs_old[a].nHits << " ";
    cout << endl;
    PrintSparseMatrix(comparatorMatrix);
-
+*/
           }
 
        for (int irank=0; irank < nclct_wide; irank++) {
            if (allComparatorSegs[irank].patternRank > 2) allBelongsToRank_1_2 = false;
            if (allComparatorSegs[irank].patternRank > 3) allBelongsToRank_1_2_3 = false;
+           if (allComparatorSegs[irank].patternRank < 4) allBelongsToRank_4_5 = false;
            if (allComparatorSegs[irank].nHits != 6) allBelongsToLayer_6 = false;
            if (allComparatorSegs[irank].nHits != 5) allBelongsToLayer_5 = false;
+           if (allComparatorSegs[irank].nHits != 4) allBelongsToLayer_4 = false;
            }
    
        nCLCT_wide->Fill(CSCid,nclct_wide);
@@ -212,10 +215,20 @@ Bool_t cscSelector::Process(Long64_t entry)
           }
 
       if (allBelongsToRank_1_2_3 && (allBelongsToLayer_6 || allBelongsToLayer_5) ) {
-
          nCLCT_wide_rank_123_layer_56->Fill(CSCid,nclct_wide);
          nCLCT_narrow_rank_123_layer_56->Fill(CSCid,nclct_narrow);
+         }
 
+      if (allBelongsToRank_1_2_3 && allBelongsToLayer_4) {
+         nCLCT_wide_rank_123_layer_4->Fill(CSCid,nclct_wide);
+         nCLCT_narrow_rank_123_layer_4->Fill(CSCid,nclct_narrow);
+//if (nclct_wide > 0 || nclct_narrow > 0)PrintSparseMatrix(comparatorMatrix);
+         }
+
+      if (allBelongsToRank_4_5 && (allBelongsToLayer_6 || allBelongsToLayer_5) ) {
+         nCLCT_wide_rank_45_layer_56->Fill(CSCid,nclct_wide);
+         nCLCT_narrow_rank_45_layer_56->Fill(CSCid,nclct_narrow);
+if (nclct_wide > 0 || nclct_narrow > 0) PrintSparseMatrix(comparatorMatrix);
          }
 
       if (allBelongsToLayer_6) {
@@ -473,6 +486,12 @@ nTotal_wideHasLess->Write();
 
 nCLCT_wide_rank_123_layer_56->Write();
 nCLCT_narrow_rank_123_layer_56->Write();
+
+nCLCT_wide_rank_123_layer_4->Write();
+nCLCT_narrow_rank_123_layer_4->Write();
+
+nCLCT_wide_rank_45_layer_56->Write();
+nCLCT_narrow_rank_45_layer_56->Write();
 
    nCLCT_wide->Write();
    nCLCT_narrow->Write();
